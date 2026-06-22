@@ -132,62 +132,6 @@ const questionsData = [
     ]
   },
   {
-    "id": "q3",
-    "title": "完全平方式判断",
-    "tag": "完全平方式",
-    "level": "易错",
-    "image": "images/q3.png",
-    "problem": "若x²－mx＋25是完全平方式，则m＝********。",
-    "steps": [
-      {
-        "type": "choice",
-        "question": "这个式子的二次项和常数项分别是什么？",
-        "options": [
-          { "text": "x²和25", "feedback": "正确，先找准两端的平方项。" },
-          { "text": "x²和－mx", "feedback": "不对，－mx是一次项，不是常数项。" },
-          { "text": "－mx和25", "feedback": "不对，－mx不是二次项。" }
-        ],
-        "correctIndex": 0
-      },
-      {
-        "type": "choice",
-        "question": "25可以看成哪个数的平方？",
-        "options": [
-          { "text": "5²", "feedback": "正确，25＝5²。" },
-          { "text": "10²", "feedback": "不对，10²＝100。" },
-          { "text": "25²", "feedback": "不对，25本身不是25²。" }
-        ],
-        "correctIndex": 0
-      },
-      {
-        "type": "choice",
-        "question": "完全平方式(x±5)²展开后，中间项可能是多少？",
-        "options": [
-          { "text": "±10x", "feedback": "正确，(x±5)²＝x²±10x＋25。" },
-          { "text": "±5x", "feedback": "不对，中间项要用2×x×5。" },
-          { "text": "±25x", "feedback": "不对，25是常数项，不是中间项系数。" }
-        ],
-        "correctIndex": 0
-      },
-      {
-        "type": "input",
-        "question": "原式x²－mx＋25中的一次项系数是多少？",
-        "acceptedAnswers": ["-m", "－m", "- m", "－ m"],
-        "placeholder": "请输入答案",
-        "feedbackCorrect": "正确，一次项是－mx，系数是－m。",
-        "feedbackWrong": "注意一次项是－mx，不是mx。"
-      },
-      {
-        "type": "input",
-        "question": "要成为完全平方式，－m可能等于10或－10，那么m等于多少？",
-        "acceptedAnswers": ["±10", "正负10", "10或-10", "-10或10", "10或－10", "－10或10", "10,-10", "-10,10", "10，-10", "-10，10", "10，－10", "－10，10", "m=±10", "m＝±10"],
-        "placeholder": "请输入答案",
-        "feedbackCorrect": "正确，m＝±10。",
-        "feedbackWrong": "注意是－m＝±10，求m时符号也要考虑。"
-      }
-    ]
-  },
-  {
     "id": "q4",
     "title": "平行线中的折线角",
     "tag": "角度关系",
@@ -248,70 +192,6 @@ const questionsData = [
         "placeholder": "请输入答案",
         "feedbackCorrect": "正确，∠C＝100°。",
         "feedbackWrong": "注意∠2和∠C相等，不能只写∠1的20°。"
-      }
-    ]
-  },
-  {
-    "id": "q5",
-    "title": "折叠与平行线角度",
-    "tag": "几何折叠",
-    "level": "易错",
-    "image": "images/q5.png",
-    "problem": "如图，四边形ABCD中，点M、N分别在AB、BC上，将△BMN沿MN翻折，得△FMN，若MF∥AD，FN∥DC，则∠B＝________。",
-    "steps": [
-      {
-        "type": "choice",
-        "question": "△BMN沿MN翻折后，点B对应到哪个点？",
-        "options": [
-          { "text": "F", "feedback": "正确，折叠后得到△FMN，B对应F。" },
-          { "text": "M", "feedback": "不对，M在折痕MN上，位置不变。" },
-          { "text": "N", "feedback": "不对，N也在折痕MN上，位置不变。" }
-        ],
-        "correctIndex": 0
-      },
-      {
-        "type": "choice",
-        "question": "根据折叠性质，∠B和哪个角相等？",
-        "options": [
-          { "text": "∠MFN", "feedback": "正确，B对应F，所以∠B＝∠MFN。" },
-          { "text": "∠FMN", "feedback": "不对，∠FMN对应的是∠BMN。" },
-          { "text": "∠FNM", "feedback": "不对，∠FNM对应的是∠BNM。" }
-        ],
-        "correctIndex": 0
-      },
-      {
-        "type": "choice",
-        "question": "已知MF∥AD，FN∥DC，那么∠MFN和四边形中的哪个角相等？",
-        "options": [
-          { "text": "∠D", "feedback": "正确，两边分别平行，所以∠MFN＝∠D。" },
-          { "text": "∠A", "feedback": "不对，∠A的两边是AB和AD。" },
-          { "text": "∠C", "feedback": "不对，∠C的两边是BC和CD。" }
-        ],
-        "correctIndex": 0
-      },
-      {
-        "type": "input",
-        "question": "由折叠和平行关系可知∠B＝∠D。设∠B＝x°，则∠D也是多少？",
-        "acceptedAnswers": ["x", "x°", "x度"],
-        "placeholder": "请输入答案",
-        "feedbackCorrect": "正确，∠D也可以表示为x°。",
-        "feedbackWrong": "注意前面得到的是∠B＝∠D。"
-      },
-      {
-        "type": "input",
-        "question": "四边形内角和为360°，图中∠A＝100°，∠C＝70°。可列方程：100＋x＋70＋x＝360。解得x是多少？",
-        "acceptedAnswers": ["95", "95°", "95度"],
-        "placeholder": "请输入答案",
-        "feedbackCorrect": "正确，x＝95。",
-        "feedbackWrong": "先合并：170＋2x＝360。"
-      },
-      {
-        "type": "input",
-        "question": "所以∠B的度数是多少？",
-        "acceptedAnswers": ["95", "95°", "95度"],
-        "placeholder": "请输入答案",
-        "feedbackCorrect": "正确，∠B＝95°。",
-        "feedbackWrong": "注意∠B和∠D相等，再用四边形内角和。"
       }
     ]
   }
