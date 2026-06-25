@@ -346,6 +346,118 @@
       margin-bottom: 6px;
     }
 
+    /* ========== 反馈卡片 ========== */
+    .feedback-card-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .feedback-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .feedback-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--error-bg);
+    }
+
+    .feedback-card-icon {
+      font-size: 32px;
+    }
+
+    .feedback-card-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--error);
+    }
+
+    .feedback-card-content {
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--text);
+      margin-bottom: 20px;
+      padding: 14px;
+      background: var(--error-bg);
+      border-radius: 8px;
+      border-left: 4px solid var(--error);
+    }
+
+    .feedback-card-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .feedback-card-btn:active {
+      background: var(--primary-dark);
+    }
+
+    /* ========== 微变式页 ========== */
+    .remedial-header {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .remedial-badge {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .remedial-skill {
+      font-size: 14px;
+      opacity: 0.85;
+    }
+
+    .btn-finish {
+      margin-top: 16px;
+      background: #7c3aed;
+      color: #fff;
+    }
+
+    .btn-finish:hover { background: #6d28d9; }
+
     /* ========== 完成页 ========== */
     .complete-page {
       background: var(--card);
@@ -399,11 +511,18 @@
     const STORAGE_KEY = 'math_reading_completed';
 
     // ---------- 路由状态 ----------
-    let currentView = 'home'; // home | practice | complete
+    let currentView = 'home'; // home | practice | remedial | complete
     let currentQuestionId = null;
     let currentStepIndex = 0;
     let stepAnswered = false;
     let stepHistory = []; // 已完成步骤：{ stepNum, question, answer }
+    let stepErrorCount = 0; // 当前步骤的错误次数（用于分级提示）
+    let showingFeedbackCard = false; // 是否正在显示反馈卡片
+
+    // 微变式相关状态
+    let stepErrors = [];          // 主线各步的错误记录
+    let currentRemedialData = null; // 当前推送的微变式数据
+    let remedialAnswered = false;   // 微变式是否已答对
 
     const app = document.getElementById('app');
 
@@ -465,6 +584,7 @@
     function render() {
       if (currentView === 'home') renderHome();
       else if (currentView === 'practice') renderPractice();
+      else if (currentView === 'remedial') renderRemedial();
       else if (currentView === 'complete') renderComplete();
     }
 
@@ -643,12 +763,257 @@
       currentQuestionId = id;
       currentStepIndex = 0;
       stepHistory = [];
+      stepErrorCount = 0;
+      showingFeedbackCard = false;
+      stepErrors = [];
+      currentRemedialData = null;
+      remedialAnswered = false;
       currentView = 'practice';
       render();
     }
 
+    // 显示反馈卡片
+    function showFeedbackCard(message) {
+      showingFeedbackCard = true;
+      const overlay = document.createElement('div');
+      overlay.className = 'feedback-card-overlay';
+      overlay.id = 'feedbackCardOverlay';
+      overlay.innerHTML = `
+        <div class="feedback-card">
+          <div class="feedback-card-header">
+            <div class="feedback-card-icon">❌</div>
+            <div class="feedback-card-title">答错了，请重新思考</div>
+          </div>
+          <div class="feedback-card-content">${escapeHtml(message)}</div>
+          <button class="feedback-card-btn" onclick="closeFeedbackCard()">我已读懂，重新作答</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    // 关闭主线反馈卡片
+    function closeFeedbackCard() {
+      showingFeedbackCard = false;
+      const overlay = document.getElementById('feedbackCardOverlay');
+      if (overlay) overlay.remove();
+
+      if (currentView !== 'practice') return;
+      const q = questionsData.find(x => x.id === currentQuestionId);
+      if (!q) return;
+      const step = q.steps[currentStepIndex];
+      if (!step) return;
+
+      if (step.type === 'choice') {
+        document.querySelectorAll('.option-btn').forEach((btn) => {
+          btn.disabled = false;
+          btn.classList.remove('selected-wrong', 'selected-correct');
+        });
+      } else if (step.type === 'input') {
+        const input = document.getElementById('answerInput');
+        if (input) { input.select(); input.focus(); }
+      }
+    }
+
+    // ---------- 错误记录与微变式选择 ----------
+    function recordStepError(step, stepIndex) {
+      const existing = stepErrors.find(e => e.stepIndex === stepIndex);
+      if (existing) {
+        existing.errorCount++;
+      } else {
+        stepErrors.push({
+          stepIndex:            stepIndex,
+          skillTag:             step.skillTag || '',
+          priority:             (typeof step.priority === 'number') ? step.priority : 0,
+          errorCount:           1,
+          remedialQuestion:     step.remedialQuestion     || null,
+          remedialOptions:      step.remedialOptions      || null,
+          remedialCorrectIndex: (step.remedialCorrectIndex != null) ? step.remedialCorrectIndex : null,
+          remedialAnswer:       step.remedialAnswer       || null,
+          remedialExplanation:  step.remedialExplanation  || null,
+          remedialImage:        step.remedialImage        || null
+        });
+      }
+    }
+
+    // 从错误记录中选出最优先的微变式（主线完成后调用）
+    function selectRemedialStep() {
+      const candidates = stepErrors.filter(e => e.remedialQuestion);
+      if (candidates.length === 0) return null;
+      candidates.sort((a, b) => {
+        if (b.priority !== a.priority) return b.priority - a.priority;
+        if (b.errorCount !== a.errorCount) return b.errorCount - a.errorCount;
+        return a.stepIndex - b.stepIndex;
+      });
+      return candidates[0];
+    }
+
+    // ---------- 微变式页渲染 ----------
+    function renderRemedial() {
+      const q = questionsData.find(x => x.id === currentQuestionId);
+      const rd = currentRemedialData;
+      if (!rd) { currentView = 'complete'; render(); return; }
+
+      const imgSrc = rd.remedialImage || (q ? q.image : null);
+      const imageHtml = imgSrc
+        ? `<div class="problem-image-wrap"><img class="problem-image" src="${escapeHtml(imgSrc)}" alt="题目原图"></div>`
+        : '';
+
+      let answerHtml = '';
+      const hasOptions = Array.isArray(rd.remedialOptions) && rd.remedialOptions.length > 0;
+      if (hasOptions) {
+        answerHtml = `
+          <ul class="options-list" id="remedialOptionsList">
+            ${rd.remedialOptions.map((opt, i) => `
+              <li>
+                <button type="button" class="option-btn" onclick="submitRemedialChoice(${i})" id="remedial-opt-${i}">
+                  ${escapeHtml(opt)}
+                </button>
+              </li>
+            `).join('')}
+          </ul>`;
+      } else {
+        answerHtml = `
+          <div class="input-group">
+            <input type="text" class="input-field" id="remedialInput" placeholder="请输入答案" autocomplete="off">
+            <button class="btn btn-primary" id="remedialSubmitBtn" onclick="submitRemedialInput()">提交</button>
+          </div>`;
+      }
+
+      app.innerHTML = `
+        <div class="remedial-header">
+          <div class="remedial-badge">🔍 针对性补练</div>
+          <div class="remedial-skill">考查技能：${escapeHtml(rd.skillTag || '')}</div>
+        </div>
+        ${imageHtml}
+        <div class="step-box">
+          <div class="step-question">${escapeHtml(rd.remedialQuestion)}</div>
+          ${answerHtml}
+          <div class="feedback" id="remedialFeedback"></div>
+          <button class="btn btn-finish hidden" id="remedialFinishBtn" onclick="finishRemedial()">完成训练</button>
+        </div>
+        <button class="btn btn-secondary" onclick="goHome()">返回首页</button>
+      `;
+
+      remedialAnswered = false;
+
+      if (!hasOptions) {
+        const input = document.getElementById('remedialInput');
+        if (input) {
+          input.addEventListener('keydown', e => { if (e.key === 'Enter') submitRemedialInput(); });
+        }
+      }
+    }
+
+    // 微变式选择题提交
+    function submitRemedialChoice(index) {
+      if (remedialAnswered || showingFeedbackCard) return;
+
+      const rd = currentRemedialData;
+      const feedbackEl = document.getElementById('remedialFeedback');
+      const finishBtn = document.getElementById('remedialFinishBtn');
+
+      document.querySelectorAll('#remedialOptionsList .option-btn').forEach(btn => {
+        btn.disabled = true;
+      });
+
+      const btn = document.getElementById('remedial-opt-' + index);
+      const isCorrect = index === rd.remedialCorrectIndex;
+
+      if (isCorrect) {
+        if (btn) btn.classList.add('selected-correct');
+        feedbackEl.className = 'feedback show correct';
+        feedbackEl.innerHTML = `<div class="feedback-title">✅ 正确</div><div>${escapeHtml(rd.remedialExplanation || '回答正确！')}</div>`;
+        remedialAnswered = true;
+        if (finishBtn) finishBtn.classList.remove('hidden');
+      } else {
+        if (btn) btn.classList.add('selected-wrong');
+        const msg = rd.remedialExplanation
+          ? `这道补练题还没有答对，请重新观察图形和题干。\n\n解析：${rd.remedialExplanation}`
+          : '这道补练题还没有答对，请重新观察图形和题干。';
+        showRemedialFeedbackCard(msg);
+      }
+    }
+
+    // 微变式填空题提交
+    function submitRemedialInput() {
+      if (remedialAnswered || showingFeedbackCard) return;
+
+      const rd = currentRemedialData;
+      const input = document.getElementById('remedialInput');
+      const feedbackEl = document.getElementById('remedialFeedback');
+      const finishBtn = document.getElementById('remedialFinishBtn');
+      const submitBtn = document.getElementById('remedialSubmitBtn');
+
+      if (!input || !input.value.trim()) {
+        showRemedialFeedbackCard('请先输入答案。');
+        return;
+      }
+
+      const accepted = rd.remedialAnswer ? [rd.remedialAnswer] : [];
+      const isCorrect = checkInputAnswer(input.value, accepted);
+
+      if (isCorrect) {
+        feedbackEl.className = 'feedback show correct';
+        feedbackEl.innerHTML = `<div class="feedback-title">✅ 正确</div><div>${escapeHtml(rd.remedialExplanation || '回答正确！')}</div>`;
+        if (input) input.disabled = true;
+        if (submitBtn) submitBtn.disabled = true;
+        remedialAnswered = true;
+        if (finishBtn) finishBtn.classList.remove('hidden');
+      } else {
+        const msg = rd.remedialExplanation
+          ? `这道补练题还没有答对，请重新观察图形和题干。\n\n解析：${rd.remedialExplanation}`
+          : '这道补练题还没有答对，请重新观察图形和题干。';
+        showRemedialFeedbackCard(msg);
+      }
+    }
+
+    // 微变式专用反馈卡片（关闭时恢复微变式 UI）
+    function showRemedialFeedbackCard(message) {
+      showingFeedbackCard = true;
+      const overlay = document.createElement('div');
+      overlay.className = 'feedback-card-overlay';
+      overlay.id = 'feedbackCardOverlay';
+      overlay.innerHTML = `
+        <div class="feedback-card">
+          <div class="feedback-card-header">
+            <div class="feedback-card-icon">❌</div>
+            <div class="feedback-card-title">答错了，请重新思考</div>
+          </div>
+          <div class="feedback-card-content">${escapeHtml(message)}</div>
+          <button class="feedback-card-btn" onclick="closeRemedialFeedbackCard()">我已读懂，重新作答</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    function closeRemedialFeedbackCard() {
+      showingFeedbackCard = false;
+      const overlay = document.getElementById('feedbackCardOverlay');
+      if (overlay) overlay.remove();
+
+      const rd = currentRemedialData;
+      if (!rd) return;
+      const hasOptions = Array.isArray(rd.remedialOptions) && rd.remedialOptions.length > 0;
+      if (hasOptions) {
+        document.querySelectorAll('#remedialOptionsList .option-btn').forEach(btn => {
+          btn.disabled = false;
+          btn.classList.remove('selected-wrong', 'selected-correct');
+        });
+      } else {
+        const input = document.getElementById('remedialInput');
+        if (input) { input.select(); input.focus(); }
+      }
+    }
+
+    // 微变式完成，跳到最终完成页
+    function finishRemedial() {
+      currentRemedialData = null;
+      currentView = 'complete';
+      render();
+    }
+
     function selectOption(index) {
-      if (stepAnswered) return;
+      if (stepAnswered || showingFeedbackCard) return;
 
       const q = questionsData.find(x => x.id === currentQuestionId);
       const step = q.steps[currentStepIndex];
@@ -669,25 +1034,30 @@
         feedbackEl.className = 'feedback show correct';
         feedbackEl.innerHTML = `<div class="feedback-title">✅ 正确</div><div>${escapeHtml(opt.feedback)}</div>`;
         stepAnswered = true;
+        stepErrorCount = 0; // 重置错误计数
         nextBtn.classList.remove('hidden');
       } else {
         btn.classList.add('selected-wrong');
-        feedbackEl.className = 'feedback show wrong';
-        feedbackEl.innerHTML = `<div class="feedback-title">❌ 再想想</div><div>${escapeHtml(opt.feedback)}</div>`;
-        // 选错后允许重新选择：延迟后恢复
-        setTimeout(() => {
-          document.querySelectorAll('.option-btn').forEach((b, i) => {
-            b.disabled = false;
-            b.classList.remove('selected-wrong', 'selected-correct');
-          });
-          feedbackEl.className = 'feedback';
-          feedbackEl.innerHTML = '';
-        }, 1200);
+        
+        // 获取提示内容
+        let feedbackMessage = opt.feedback;
+        
+        // 如果有hints数组，根据错误次数显示不同提示
+        if (step.hints && Array.isArray(step.hints) && step.hints.length > 0) {
+          const hintIndex = Math.min(stepErrorCount, step.hints.length - 1);
+          feedbackMessage = step.hints[hintIndex];
+        }
+        
+        recordStepError(step, currentStepIndex); // 记录该步骤出错
+        stepErrorCount++; // 增加错误计数
+        
+        // 显示反馈卡片
+        showFeedbackCard(feedbackMessage);
       }
     }
 
     function submitInput() {
-      if (stepAnswered) return;
+      if (stepAnswered || showingFeedbackCard) return;
 
       const q = questionsData.find(x => x.id === currentQuestionId);
       const step = q.steps[currentStepIndex];
@@ -698,8 +1068,7 @@
       const submitBtn = document.getElementById('submitBtn');
 
       if (!val.trim()) {
-        feedbackEl.className = 'feedback show wrong';
-        feedbackEl.innerHTML = `<div class="feedback-title">❌ 再想想</div><div>请先输入答案。</div>`;
+        showFeedbackCard('请先输入答案。');
         return;
       }
 
@@ -711,11 +1080,23 @@
         input.disabled = true;
         submitBtn.disabled = true;
         stepAnswered = true;
+        stepErrorCount = 0; // 重置错误计数
         nextBtn.classList.remove('hidden');
       } else {
-        feedbackEl.className = 'feedback show wrong';
-        feedbackEl.innerHTML = `<div class="feedback-title">❌ 再想想</div><div>${escapeHtml(step.feedbackWrong)}</div>`;
-        input.select();
+        // 获取提示内容
+        let feedbackMessage = step.feedbackWrong;
+        
+        // 如果有hints数组，根据错误次数显示不同提示
+        if (step.hints && Array.isArray(step.hints) && step.hints.length > 0) {
+          const hintIndex = Math.min(stepErrorCount, step.hints.length - 1);
+          feedbackMessage = step.hints[hintIndex];
+        }
+        
+        recordStepError(step, currentStepIndex); // 记录该步骤出错
+        stepErrorCount++; // 增加错误计数
+        
+        // 显示反馈卡片
+        showFeedbackCard(feedbackMessage);
       }
     }
 
@@ -723,8 +1104,18 @@
       const q = questionsData.find(x => x.id === currentQuestionId);
       saveCurrentStepToHistory();
       currentStepIndex++;
+      stepErrorCount = 0; // 重置新步骤的错误计数
+      stepAnswered = false; // 重置答题状态
       if (currentStepIndex >= q.steps.length) {
-        currentView = 'complete';
+        // 主线全部完成，检查是否需要推送微变式
+        const remedialData = selectRemedialStep();
+        if (remedialData) {
+          currentRemedialData = remedialData;
+          remedialAnswered = false;
+          currentView = 'remedial';
+        } else {
+          currentView = 'complete';
+        }
       }
       render();
     }
@@ -734,6 +1125,14 @@
       currentQuestionId = null;
       currentStepIndex = 0;
       stepHistory = [];
+      stepErrorCount = 0;
+      showingFeedbackCard = false;
+      stepErrors = [];
+      currentRemedialData = null;
+      remedialAnswered = false;
+      // 清除可能存在的反馈卡片
+      const overlay = document.getElementById('feedbackCardOverlay');
+      if (overlay) overlay.remove();
       render();
     }
 
@@ -743,6 +1142,11 @@
     window.submitInput = submitInput;
     window.goNextStep = goNextStep;
     window.goHome = goHome;
+    window.closeFeedbackCard = closeFeedbackCard;
+    window.submitRemedialChoice = submitRemedialChoice;
+    window.submitRemedialInput = submitRemedialInput;
+    window.closeRemedialFeedbackCard = closeRemedialFeedbackCard;
+    window.finishRemedial = finishRemedial;
 
     // 启动
     render();
