@@ -1,0 +1,9 @@
+{
+  "name": "math-helper",
+  "version": "1.0.0",
+  "description": "数学读题小助手 - 逐步引导做题工具",
+  "private": true,
+  "scripts": {
+    "validate": "node validate-questions.js"
+  }
+}
