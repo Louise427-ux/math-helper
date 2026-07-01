@@ -245,20 +245,6 @@
       margin-bottom: 4px;
     }
 
-    .history-question {
-      font-size: 15px;
-      color: var(--text);
-      line-height: 1.6;
-      margin-bottom: 6px;
-    }
-
-    .history-answer {
-      font-size: 16px;
-      font-weight: 600;
-      color: #166534;
-      line-height: 1.5;
-    }
-
     .current-step-label {
       font-size: 14px;
       font-weight: 600;
@@ -740,16 +726,23 @@
 
     function renderHistoryHtml() {
       if (stepHistory.length === 0) return '';
-      const items = stepHistory.map(item => `
-        <div class="history-step">
-          <div class="history-step-num">第 ${item.stepNum} 步 · 已完成</div>
-          <div class="history-question">${escapeHtml(item.question)}</div>
-          <div class="history-answer">✅ ${escapeHtml(item.answer)}</div>
-        </div>
-      `).join('');
+      const items = stepHistory.map(item => {
+        let text = '已完成';
+        if (item.stepSummary && item.stepSummary.trim()) {
+          text = item.stepSummary.trim();
+        } else if (item.skillTag && item.skillTag.trim()) {
+          text = item.skillTag.trim();
+        }
+
+        return `
+          <div class="history-step">
+            <div class="history-step-num">第 ${item.stepNum} 步：${escapeHtml(text)}</div>
+          </div>
+        `;
+      }).join('');
       return `
         <div class="history-section">
-          <div class="history-title">前面已完成的步骤</div>
+          <div class="history-title">🧭 本题思路轨迹</div>
           ${items}
         </div>
       `;
@@ -765,11 +758,14 @@
         const input = document.getElementById('answerInput');
         answer = input ? input.value.trim() : '';
       }
-      stepHistory.push({
+      const historyItem = {
         stepNum: currentStepIndex + 1,
         question: step.question,
-        answer: answer
-      });
+        answer: answer,
+        skillTag: step.skillTag || '',
+        stepSummary: step.stepSummary || ''
+      };
+      stepHistory.push(historyItem);
     }
 
     function renderPractice() {
@@ -815,12 +811,12 @@
                 <h2>${escapeHtml(q.title)}</h2>
                 <div class="panel-progress">第 ${currentStepIndex + 1} / ${totalSteps} 步 · 已完成 <span class="done-count">${currentStepIndex}</span> 步</div>
               </div>
-              ${imageHtml}
               <div class="problem-box">${escapeHtml(q.problem)}</div>
+              ${imageHtml}
+              ${renderHistoryHtml()}
             </div>
           </aside>
           <section class="work-panel">
-            ${renderHistoryHtml()}
             <div class="step-box">
               <div class="current-step-label">当前步骤 · 第 ${currentStepIndex + 1} / ${totalSteps} 步</div>
               <div class="step-question">${escapeHtml(step.question)}</div>
