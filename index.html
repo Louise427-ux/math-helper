@@ -498,12 +498,126 @@
       line-height: 1.7;
     }
 
+    /* ========== 做题页分栏布局 ========== */
+    .practice-layout {
+      display: block;
+    }
+
+    .question-toggle {
+      margin-bottom: 14px;
+      background: #eff6ff;
+      color: var(--primary);
+      border: 1px solid #bfdbfe;
+      font-size: 15px;
+      padding: 12px 16px;
+    }
+
+    .question-toggle::before { content: "📖 "; }
+
+    .panel-progress {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .panel-progress .done-count { color: var(--success); }
+
+    /* 手机端（窄屏）：原题区默认折叠，优先显示当前步骤 */
+    @media (max-width: 899px) {
+      .question-panel-body { display: none; }
+      .question-panel.is-open .question-panel-body { display: block; }
+    }
+
+    /* 电脑端（宽屏）：左右分栏，左侧原题区固定，题图随屏幕自适应放大 */
+    @media (min-width: 900px) {
+      .app.app--practice { max-width: 1200px; }
+
+      .practice-layout {
+        display: grid;
+        /* 左侧原题区按容器宽度自适应（最小 360px，最多约 48%），屏幕越大题图越大 */
+        grid-template-columns: minmax(360px, 48%) minmax(0, 1fr);
+        gap: 24px;
+        align-items: start;
+      }
+
+      .question-panel {
+        position: sticky;
+        top: 20px;
+        align-self: start;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+      }
+
+      .question-toggle { display: none !important; }
+      .question-panel-body { display: block !important; }
+    }
+
+    /* 超宽屏：进一步放大原题区与题图 */
+    @media (min-width: 1400px) {
+      .app.app--practice { max-width: 1440px; }
+
+      .practice-layout {
+        grid-template-columns: minmax(420px, 52%) minmax(0, 1fr);
+      }
+    }
+
+    .problem-image { cursor: zoom-in; }
+
+    /* ========== 图片放大预览 ========== */
+    .image-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .image-modal.show { display: flex; }
+
+    .image-modal-img {
+      max-width: 95vw;
+      max-height: 90vh;
+      width: auto;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+      cursor: default;
+    }
+
+    .image-modal-close {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      font-size: 28px;
+      line-height: 1;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .image-modal-close:hover { background: rgba(255, 255, 255, 0.3); }
+
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
   <div class="app" id="app">
     <!-- 内容由 JS 渲染 -->
+  </div>
+
+  <!-- 图片放大预览层 -->
+  <div class="image-modal" id="imageModal">
+    <button type="button" class="image-modal-close" id="imageModalClose" aria-label="关闭">×</button>
+    <img class="image-modal-img" id="imageModalImg" src="" alt="放大题图">
   </div>
 
   <script src="questions.js"></script>
@@ -582,6 +696,7 @@
 
     // ---------- 渲染 ----------
     function render() {
+      app.classList.toggle('app--practice', currentView === 'practice');
       if (currentView === 'home') renderHome();
       else if (currentView === 'practice') renderPractice();
       else if (currentView === 'remedial') renderRemedial();
@@ -688,24 +803,34 @@
       }
 
       const imageHtml = q.image
-        ? `<div class="problem-image-wrap"><img class="problem-image" src="${escapeHtml(q.image)}" alt="题目原图"></div>`
+        ? `<div class="problem-image-wrap"><img class="problem-image" src="${escapeHtml(q.image)}" alt="题目原图（点击放大）" onclick="openImageModal(this.src)"></div>`
         : '';
 
       app.innerHTML = `
-        <div class="practice-header">
-          <h2>${escapeHtml(q.title)}</h2>
+        <div class="practice-layout">
+          <aside class="question-panel" id="questionPanel">
+            <button type="button" class="btn question-toggle" id="questionToggleBtn" onclick="toggleQuestionPanel()">查看原题与题图</button>
+            <div class="question-panel-body" id="questionPanelBody">
+              <div class="practice-header">
+                <h2>${escapeHtml(q.title)}</h2>
+                <div class="panel-progress">第 ${currentStepIndex + 1} / ${totalSteps} 步 · 已完成 <span class="done-count">${currentStepIndex}</span> 步</div>
+              </div>
+              ${imageHtml}
+              <div class="problem-box">${escapeHtml(q.problem)}</div>
+            </div>
+          </aside>
+          <section class="work-panel">
+            ${renderHistoryHtml()}
+            <div class="step-box">
+              <div class="current-step-label">当前步骤 · 第 ${currentStepIndex + 1} / ${totalSteps} 步</div>
+              <div class="step-question">${escapeHtml(step.question)}</div>
+              ${stepHtml}
+              <div class="feedback" id="feedback"></div>
+              <button class="btn btn-next hidden" id="nextBtn" onclick="goNextStep()">下一步</button>
+            </div>
+            <button class="btn btn-secondary" onclick="goHome()">返回首页</button>
+          </section>
         </div>
-        ${imageHtml}
-        <div class="problem-box">${escapeHtml(q.problem)}</div>
-        ${renderHistoryHtml()}
-        <div class="step-box">
-          <div class="current-step-label">当前步骤 · 第 ${currentStepIndex + 1} / ${totalSteps} 步</div>
-          <div class="step-question">${escapeHtml(step.question)}</div>
-          ${stepHtml}
-          <div class="feedback" id="feedback"></div>
-          <button class="btn btn-next hidden" id="nextBtn" onclick="goNextStep()">下一步</button>
-        </div>
-        <button class="btn btn-secondary" onclick="goHome()">返回首页</button>
       `;
 
       stepAnswered = false;
@@ -855,7 +980,7 @@
 
       const imgSrc = rd.remedialImage || (q ? q.image : null);
       const imageHtml = imgSrc
-        ? `<div class="problem-image-wrap"><img class="problem-image" src="${escapeHtml(imgSrc)}" alt="题目原图"></div>`
+        ? `<div class="problem-image-wrap"><img class="problem-image" src="${escapeHtml(imgSrc)}" alt="题目原图（点击放大）" onclick="openImageModal(this.src)"></div>`
         : '';
 
       let answerHtml = '';
@@ -1136,8 +1261,45 @@
       render();
     }
 
+    // ---------- 原题区折叠（手机端） ----------
+    function toggleQuestionPanel() {
+      const panel = document.getElementById('questionPanel');
+      const btn = document.getElementById('questionToggleBtn');
+      if (!panel) return;
+      const open = panel.classList.toggle('is-open');
+      if (btn) btn.textContent = open ? '收起原题与题图' : '查看原题与题图';
+    }
+
+    // ---------- 题图点击放大 ----------
+    function openImageModal(src) {
+      const modal = document.getElementById('imageModal');
+      const img = document.getElementById('imageModalImg');
+      if (!modal || !img) return;
+      img.src = src;
+      modal.classList.add('show');
+    }
+
+    function closeImageModal() {
+      const modal = document.getElementById('imageModal');
+      if (modal) modal.classList.remove('show');
+    }
+
+    (function setupImageModal() {
+      const modal = document.getElementById('imageModal');
+      const img = document.getElementById('imageModalImg');
+      const closeBtn = document.getElementById('imageModalClose');
+      // 点击遮罩关闭；点击图片本身不关闭
+      if (modal) modal.addEventListener('click', closeImageModal);
+      if (img) img.addEventListener('click', e => e.stopPropagation());
+      if (closeBtn) closeBtn.addEventListener('click', e => { e.stopPropagation(); closeImageModal(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeImageModal(); });
+    })();
+
     // 暴露给 onclick
     window.startPractice = startPractice;
+    window.toggleQuestionPanel = toggleQuestionPanel;
+    window.openImageModal = openImageModal;
+    window.closeImageModal = closeImageModal;
     window.selectOption = selectOption;
     window.submitInput = submitInput;
     window.goNextStep = goNextStep;
