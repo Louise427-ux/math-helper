@@ -510,10 +510,85 @@
 
     .panel-progress .done-count { color: var(--success); }
 
-    /* 手机端（窄屏）：原题区默认折叠，优先显示当前步骤 */
-    @media (max-width: 899px) {
-      .question-panel-body { display: none; }
-      .question-panel.is-open .question-panel-body { display: block; }
+    /* 手机端：题图默认可见，题干文字可折叠，减少看图和作答之间的跳转 */
+    @media (max-width: 767px) {
+      .question-toggle {
+        margin-bottom: 10px;
+        padding: 10px 14px;
+      }
+
+      .question-panel-body { display: block; }
+
+      .question-panel .practice-header {
+        margin-bottom: 10px;
+      }
+
+      .question-panel .practice-header h2 {
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+
+      .question-panel .problem-box {
+        display: none;
+        margin-bottom: 12px;
+        padding: 12px;
+        font-size: 16px;
+        line-height: 1.65;
+      }
+
+      .question-panel.is-open .problem-box { display: block; }
+
+      .question-panel .problem-image-wrap {
+        margin-bottom: 10px;
+        max-height: 220px;
+      }
+
+      .question-panel .problem-image {
+        height: clamp(160px, 42vw, 220px);
+        object-fit: contain;
+      }
+
+      .question-panel .history-section {
+        max-height: 118px;
+        overflow-y: auto;
+        margin-bottom: 12px;
+      }
+
+      .question-panel .history-title {
+        margin-bottom: 6px;
+      }
+
+      .question-panel .history-step {
+        padding: 8px 10px;
+        margin-bottom: 6px;
+      }
+
+      .question-panel .history-step-num {
+        margin-bottom: 0;
+      }
+    }
+
+    /* 平板端：进入左右分栏，但比桌面端更紧凑 */
+    @media (min-width: 768px) and (max-width: 899px) {
+      .app.app--practice { max-width: 1024px; }
+
+      .practice-layout {
+        display: grid;
+        grid-template-columns: minmax(300px, 44%) minmax(0, 1fr);
+        gap: 20px;
+        align-items: start;
+      }
+
+      .question-panel {
+        position: sticky;
+        top: 16px;
+        align-self: start;
+        max-height: calc(100vh - 32px);
+        overflow-y: auto;
+      }
+
+      .question-toggle { display: none !important; }
+      .question-panel-body { display: block !important; }
     }
 
     /* 电脑端（宽屏）：左右分栏，左侧原题区固定，题图随屏幕自适应放大 */
@@ -805,7 +880,7 @@
       app.innerHTML = `
         <div class="practice-layout">
           <aside class="question-panel" id="questionPanel">
-            <button type="button" class="btn question-toggle" id="questionToggleBtn" onclick="toggleQuestionPanel()">查看原题与题图</button>
+            <button type="button" class="btn question-toggle" id="questionToggleBtn" onclick="toggleQuestionPanel()">查看题干文字</button>
             <div class="question-panel-body" id="questionPanelBody">
               <div class="practice-header">
                 <h2>${escapeHtml(q.title)}</h2>
@@ -1263,7 +1338,7 @@
       const btn = document.getElementById('questionToggleBtn');
       if (!panel) return;
       const open = panel.classList.toggle('is-open');
-      if (btn) btn.textContent = open ? '收起原题与题图' : '查看原题与题图';
+      if (btn) btn.textContent = open ? '收起题干文字' : '查看题干文字';
     }
 
     // ---------- 题图点击放大 ----------
