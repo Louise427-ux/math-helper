@@ -245,6 +245,82 @@
       margin-bottom: 4px;
     }
 
+    .knowledge-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .knowledge-card-header {
+      width: 100%;
+      padding: 10px 12px;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .knowledge-card-toggle {
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .knowledge-card-body {
+      display: none;
+      padding: 0 12px 12px;
+    }
+
+    .knowledge-card.is-open .knowledge-card-body {
+      display: block;
+    }
+
+    .knowledge-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .knowledge-tag {
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: var(--primary);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .knowledge-tag.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .knowledge-explanation {
+      min-height: 32px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
     .current-step-label {
       font-size: 14px;
       font-weight: 600;
@@ -684,6 +760,24 @@
   <script src="questions.js"></script>
   <script>
     const STORAGE_KEY = 'math_reading_completed';
+    const DEFAULT_KNOWLEDGE_EXPLANATION = '这个知识点用于帮助你完成本题中的关键转化。';
+
+    const knowledgeBase = {
+      '折叠对应线段识别': '折叠前后的对应点决定对应线段，折痕上的点保持不动。',
+      '折叠对应角识别': '折叠前后重合的角相等，要根据对应边来判断对应角。',
+      '角关系转化': '把图中较大的角拆成已知小角，或用平角关系表示未知角。',
+      '列方程求角': '把角度之间的数量关系写成等式，再求出未知角。',
+      '平行线角关系迁移': '利用平行线把一个位置的角关系迁移到另一个位置。',
+      '尺规作图识别': '根据作图痕迹判断线段、交点或辅助线的几何含义。',
+      '垂直平分线与中点关系': '垂直平分线通常和中点、等距关系一起使用。',
+      '垂直平分线性质': '垂直平分线上的点到线段两个端点的距离相等。',
+      '周长关系转化': '把周长拆成若干线段长度，再利用相等线段进行替换。',
+      '三角形周长计算': '把三角形三边相加，并结合已知关系求出周长。',
+      '辅助线意识': '遇到角度分散时，可以通过辅助线把角关系连接起来。',
+      '平行线角关系': '两直线平行时，同位角相等、内错角相等、同旁内角互补。',
+      '平角关系建立': '一条直线上的相邻角可以组成 180° 的平角。',
+      '平角关系与方程求角': '先用平角建立等式，再结合已知角关系求未知角。'
+    };
 
     // ---------- 路由状态 ----------
     let currentView = 'home'; // home | practice | remedial | complete
@@ -823,6 +917,37 @@
       `;
     }
 
+    function getKnowledgeTags(q) {
+      if (!q || !Array.isArray(q.steps)) return [];
+      const tags = q.steps
+        .map(step => (step.skillTag || '').trim())
+        .filter(Boolean);
+      return Array.from(new Set(tags));
+    }
+
+    function renderKnowledgeHtml(q) {
+      const tags = getKnowledgeTags(q);
+      if (tags.length === 0) return '';
+      const tagButtons = tags.map(tag => `
+        <button type="button" class="knowledge-tag" data-skill="${escapeHtml(tag)}" onclick="showKnowledgeExplanation(this.dataset.skill)">
+          ${escapeHtml(tag)}
+        </button>
+      `).join('');
+
+      return `
+        <div class="knowledge-card" id="knowledgeCard">
+          <button type="button" class="knowledge-card-header" onclick="toggleKnowledgeCard()">
+            <span>📌 本题知识点</span>
+            <span class="knowledge-card-toggle" id="knowledgeCardToggle">展开</span>
+          </button>
+          <div class="knowledge-card-body">
+            <div class="knowledge-tags">${tagButtons}</div>
+            <div class="knowledge-explanation" id="knowledgeExplanation">点击一个知识点，查看它在本题中的作用。</div>
+          </div>
+        </div>
+      `;
+    }
+
     function saveCurrentStepToHistory() {
       const q = questionsData.find(x => x.id === currentQuestionId);
       const step = q.steps[currentStepIndex];
@@ -888,6 +1013,7 @@
               </div>
               <div class="problem-box">${escapeHtml(q.problem)}</div>
               ${imageHtml}
+              ${renderKnowledgeHtml(q)}
               ${renderHistoryHtml()}
             </div>
           </aside>
@@ -1341,6 +1467,24 @@
       if (btn) btn.textContent = open ? '收起题干文字' : '查看题干文字';
     }
 
+    function toggleKnowledgeCard() {
+      const card = document.getElementById('knowledgeCard');
+      const toggle = document.getElementById('knowledgeCardToggle');
+      if (!card) return;
+      const open = card.classList.toggle('is-open');
+      if (toggle) toggle.textContent = open ? '收起' : '展开';
+    }
+
+    function showKnowledgeExplanation(skillTag) {
+      const explanation = document.getElementById('knowledgeExplanation');
+      if (!explanation) return;
+      explanation.textContent = knowledgeBase[skillTag] || DEFAULT_KNOWLEDGE_EXPLANATION;
+
+      document.querySelectorAll('.knowledge-tag').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.skill === skillTag);
+      });
+    }
+
     // ---------- 题图点击放大 ----------
     function openImageModal(src) {
       const modal = document.getElementById('imageModal');
@@ -1369,6 +1513,8 @@
     // 暴露给 onclick
     window.startPractice = startPractice;
     window.toggleQuestionPanel = toggleQuestionPanel;
+    window.toggleKnowledgeCard = toggleKnowledgeCard;
+    window.showKnowledgeExplanation = showKnowledgeExplanation;
     window.openImageModal = openImageModal;
     window.closeImageModal = closeImageModal;
     window.selectOption = selectOption;
