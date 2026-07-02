@@ -1083,6 +1083,69 @@
       return event;
     }
 
+    function exportEventLogsCsv() {
+      const logs = getEventLogs().filter(item => item && item.isPreview === false);
+      if (logs.length === 0) {
+        alert('暂无可导出的学生作答记录');
+        return;
+      }
+
+      const columns = [
+        'createdAt',
+        'eventType',
+        'className',
+        'studentName',
+        'questionId',
+        'questionTitle',
+        'stepIndex',
+        'stepNum',
+        'skillTag',
+        'priority',
+        'answerType',
+        'selectedIndex',
+        'selectedAnswer',
+        'answer',
+        'answerOrSelection',
+        'errorCount',
+        'remedialQuestion',
+        'sourceStepIndex',
+        'sourceStepNum',
+        'sourceSkillTag',
+        'sourcePriority',
+        'hasRemedial',
+        'completedAt'
+      ];
+
+      const toCsvValue = value => {
+        if (value == null) return '';
+        const str = String(value);
+        return /[",\r\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+      };
+
+      const rows = logs.map(log => {
+        const answerOrSelection = log.selectedAnswer != null && log.selectedAnswer !== ''
+          ? log.selectedAnswer
+          : (log.answer != null ? log.answer : '');
+        return columns.map(column => {
+          const value = column === 'answerOrSelection' ? answerOrSelection : log[column];
+          return toCsvValue(value);
+        }).join(',');
+      });
+
+      const now = new Date();
+      const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      const csv = '\uFEFF' + [columns.join(','), ...rows].join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `math-reading-event-logs-${date}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
     // ---------- 答案标准化 ----------
     function normalizeAnswer(str) {
       if (typeof str !== 'string') return '';
@@ -1160,6 +1223,9 @@
         ? `
           <div class="preview-banner">
             教师预览模式：当前测试不会作为学生数据记录。
+            <div class="student-actions">
+              <button type="button" class="btn btn-secondary" onclick="exportEventLogsCsv()">导出作答记录 CSV</button>
+            </div>
           </div>
         `
         : `
@@ -1971,6 +2037,7 @@
     window.logEvent = logEvent;
     window.getEventLogs = getEventLogs;
     window.clearEventLogs = clearEventLogs;
+    window.exportEventLogsCsv = exportEventLogsCsv;
 
     // 启动
     render();
