@@ -933,6 +933,7 @@
     const STORAGE_KEY = 'math_reading_completed';
     const STUDENT_KEY = 'math_reading_student';
     const EVENT_LOG_KEY = 'math_reading_event_logs';
+    const API_BASE_URL = 'http://localhost:3000';
     const DEFAULT_KNOWLEDGE_EXPLANATION = '这个知识点用于帮助你完成本题中的关键转化。';
 
     const knowledgeBase = {
@@ -1044,6 +1045,35 @@
       localStorage.removeItem(EVENT_LOG_KEY);
     }
 
+    function generateClientEventId() {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return window.crypto.randomUUID();
+      }
+      return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function uploadEvent(event) {
+      fetch(`${API_BASE_URL}/api/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(event)
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(result => {
+          console.log('[uploadEvent]', result);
+        })
+        .catch(error => {
+          console.warn('[uploadEvent failed]', error);
+        });
+    }
+
     function logEvent(eventType, payload = {}) {
       const student = getCurrentStudent();
       const preview = isPreviewMode();
@@ -1067,7 +1097,8 @@
         skillTag: currentStep && currentStep.skillTag ? currentStep.skillTag : null,
         priority: currentStep && typeof currentStep.priority === 'number' ? currentStep.priority : null,
         isPreview: preview,
-        ...payload
+        ...payload,
+        clientEventId: payload.clientEventId || generateClientEventId()
       };
 
       if (preview) {
@@ -1080,6 +1111,7 @@
       logs.push(event);
       saveEventLogs(logs);
       console.log('[logEvent]', event);
+      uploadEvent(event);
       return event;
     }
 
