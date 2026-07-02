@@ -1338,6 +1338,14 @@
       URL.revokeObjectURL(url);
     }
 
+    function downloadServerCsv() {
+      const token = prompt('请输入教师导出 token：');
+      if (!token) return;
+
+      const url = `${API_BASE_URL}/api/events.csv?token=${encodeURIComponent(token)}`;
+      window.location.href = url;
+    }
+
     // ---------- 答案标准化 ----------
     function normalizeAnswer(str) {
       if (typeof str !== 'string') return '';
@@ -1416,7 +1424,8 @@
           <div class="preview-banner">
             教师预览模式：当前测试不会作为学生数据记录。
             <div class="student-actions">
-              <button type="button" class="btn btn-secondary" onclick="exportTeacherFriendlyCsv()">导出作答记录 CSV</button>
+              <button type="button" class="btn btn-secondary" onclick="downloadServerCsv()">导出服务器 CSV</button>
+              <button type="button" class="btn btn-secondary" onclick="exportTeacherFriendlyCsv()">导出本机 CSV（备用）</button>
             </div>
           </div>
         `
@@ -2231,6 +2240,7 @@
     window.clearEventLogs = clearEventLogs;
     window.exportEventLogsCsv = exportEventLogsCsv;
     window.exportTeacherFriendlyCsv = exportTeacherFriendlyCsv;
+    window.downloadServerCsv = downloadServerCsv;
 
     // 启动
     render();

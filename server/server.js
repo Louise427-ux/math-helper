@@ -50,6 +50,31 @@ function pick(row, payload, key) {
   return row[key] != null && row[key] !== '' ? row[key] : payload[key];
 }
 
+function formatBeijingTime(value) {
+  if (value == null || value === '') return '';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).formatToParts(date);
+
+  const getPart = type => {
+    const part = parts.find(item => item.type === type);
+    return part ? part.value : '';
+  };
+
+  return `${getPart('year')}-${getPart('month')}-${getPart('day')} ${getPart('hour')}:${getPart('minute')}:${getPart('second')}`;
+}
+
 function getAnswerText(payload) {
   if (payload.selectedAnswer != null && payload.selectedAnswer !== '') return payload.selectedAnswer;
   if (payload.answer != null && payload.answer !== '') return payload.answer;
@@ -98,8 +123,9 @@ function buildEventsCsv(rows) {
   const lines = rows.map(row => {
     const payload = parsePayload(row);
     const eventType = pick(row, payload, 'eventType');
+    const eventTime = pick(row, payload, 'createdAt') || row.receivedAt;
     const values = [
-      pick(row, payload, 'createdAt') || row.receivedAt,
+      formatBeijingTime(eventTime),
       pick(row, payload, 'practiceName'),
       pick(row, payload, 'className'),
       pick(row, payload, 'studentName'),
