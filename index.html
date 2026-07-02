@@ -932,6 +932,7 @@
   <script>
     const STORAGE_KEY = 'math_reading_completed';
     const STUDENT_KEY = 'math_reading_student';
+    const EVENT_LOG_KEY = 'math_reading_event_logs';
     const DEFAULT_KNOWLEDGE_EXPLANATION = '这个知识点用于帮助你完成本题中的关键转化。';
 
     const knowledgeBase = {
@@ -1019,6 +1020,67 @@
 
     function isPreviewMode() {
       return new URLSearchParams(window.location.search).get('preview') === '1';
+    }
+
+    // ---------- 事件记录（本地，最小实现） ----------
+    function getEventLogs() {
+      try {
+        const raw = localStorage.getItem(EVENT_LOG_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveEventLogs(logs) {
+      try {
+        localStorage.setItem(EVENT_LOG_KEY, JSON.stringify(Array.isArray(logs) ? logs : []));
+      } catch {
+        // localStorage 写入失败时静默忽略，不影响答题
+      }
+    }
+
+    function clearEventLogs() {
+      localStorage.removeItem(EVENT_LOG_KEY);
+    }
+
+    function logEvent(eventType, payload = {}) {
+      const student = getCurrentStudent();
+      const preview = isPreviewMode();
+
+      let currentStep = null;
+      if (currentQuestionId != null) {
+        const q = questionsData.find(x => x.id === currentQuestionId);
+        if (q && Array.isArray(q.steps)) {
+          currentStep = q.steps[currentStepIndex] || null;
+        }
+      }
+
+      const event = {
+        eventType: eventType,
+        createdAt: new Date().toISOString(),
+        className: student ? student.className : null,
+        studentName: student ? student.studentName : null,
+        questionId: currentQuestionId != null ? currentQuestionId : null,
+        stepIndex: currentQuestionId != null ? currentStepIndex : null,
+        stepNum: currentQuestionId != null ? currentStepIndex + 1 : null,
+        skillTag: currentStep && currentStep.skillTag ? currentStep.skillTag : null,
+        priority: currentStep && typeof currentStep.priority === 'number' ? currentStep.priority : null,
+        isPreview: preview,
+        ...payload
+      };
+
+      if (preview) {
+        // 教师预览模式：只打印，不写入 localStorage，避免混入学生数据
+        console.log('[logEvent][preview]', event);
+        return event;
+      }
+
+      const logs = getEventLogs();
+      logs.push(event);
+      saveEventLogs(logs);
+      console.log('[logEvent]', event);
+      return event;
     }
 
     // ---------- 答案标准化 ----------
@@ -1544,9 +1606,29 @@
         feedbackEl.className = 'feedback show correct';
         feedbackEl.innerHTML = `<div class="feedback-title">✅ 正确</div><div>${escapeHtml(rd.remedialExplanation || '回答正确！')}</div>`;
         remedialAnswered = true;
+        logEvent('remedial_correct', {
+          answerType: 'choice',
+          selectedIndex: index,
+          selectedAnswer: Array.isArray(rd.remedialOptions) ? rd.remedialOptions[index] : null,
+          remedialQuestion: rd.remedialQuestion,
+          skillTag: rd.skillTag || null,
+          priority: rd.priority || null,
+          sourceStepIndex: rd.stepIndex,
+          sourceStepNum: rd.stepIndex != null ? rd.stepIndex + 1 : null
+        });
         if (finishBtn) finishBtn.classList.remove('hidden');
       } else {
         if (btn) btn.classList.add('selected-wrong');
+        logEvent('remedial_wrong', {
+          answerType: 'choice',
+          selectedIndex: index,
+          selectedAnswer: Array.isArray(rd.remedialOptions) ? rd.remedialOptions[index] : null,
+          remedialQuestion: rd.remedialQuestion,
+          skillTag: rd.skillTag || null,
+          priority: rd.priority || null,
+          sourceStepIndex: rd.stepIndex,
+          sourceStepNum: rd.stepIndex != null ? rd.stepIndex + 1 : null
+        });
         const msg = rd.remedialExplanation
           ? `这道补练题还没有答对，请重新观察图形和题干。\n\n解析：${rd.remedialExplanation}`
           : '这道补练题还没有答对，请重新观察图形和题干。';
@@ -1578,8 +1660,26 @@
         if (input) input.disabled = true;
         if (submitBtn) submitBtn.disabled = true;
         remedialAnswered = true;
+        logEvent('remedial_correct', {
+          answerType: 'input',
+          answer: input.value.trim(),
+          remedialQuestion: rd.remedialQuestion,
+          skillTag: rd.skillTag || null,
+          priority: rd.priority || null,
+          sourceStepIndex: rd.stepIndex,
+          sourceStepNum: rd.stepIndex != null ? rd.stepIndex + 1 : null
+        });
         if (finishBtn) finishBtn.classList.remove('hidden');
       } else {
+        logEvent('remedial_wrong', {
+          answerType: 'input',
+          answer: input.value.trim(),
+          remedialQuestion: rd.remedialQuestion,
+          skillTag: rd.skillTag || null,
+          priority: rd.priority || null,
+          sourceStepIndex: rd.stepIndex,
+          sourceStepNum: rd.stepIndex != null ? rd.stepIndex + 1 : null
+        });
         const msg = rd.remedialExplanation
           ? `这道补练题还没有答对，请重新观察图形和题干。\n\n解析：${rd.remedialExplanation}`
           : '这道补练题还没有答对，请重新观察图形和题干。';
@@ -1627,7 +1727,14 @@
 
     // 微变式完成，跳到最终完成页
     function finishRemedial() {
+      const q = questionsData.find(x => x.id === currentQuestionId);
       currentRemedialData = null;
+      logEvent('question_complete', {
+        questionTitle: q ? q.title : null,
+        questionId: currentQuestionId,
+        hasRemedial: true,
+        completedAt: new Date().toISOString()
+      });
       currentView = 'complete';
       render();
     }
@@ -1654,6 +1761,11 @@
         feedbackEl.className = 'feedback show correct';
         feedbackEl.innerHTML = `<div class="feedback-title">✅ 正确</div><div>${escapeHtml(opt.feedback)}</div>`;
         stepAnswered = true;
+        logEvent('step_correct', {
+          answerType: 'choice',
+          selectedIndex: index,
+          selectedAnswer: opt.text
+        });
         stepErrorCount = 0; // 重置错误计数
         nextBtn.classList.remove('hidden');
       } else {
@@ -1670,6 +1782,12 @@
         
         recordStepError(step, currentStepIndex); // 记录该步骤出错
         stepErrorCount++; // 增加错误计数
+        logEvent('step_wrong', {
+          answerType: 'choice',
+          selectedIndex: index,
+          selectedAnswer: opt.text,
+          errorCount: stepErrorCount
+        });
         
         // 显示反馈卡片
         showFeedbackCard(feedbackMessage);
@@ -1700,6 +1818,10 @@
         input.disabled = true;
         submitBtn.disabled = true;
         stepAnswered = true;
+        logEvent('step_correct', {
+          answerType: 'input',
+          answer: val.trim()
+        });
         stepErrorCount = 0; // 重置错误计数
         nextBtn.classList.remove('hidden');
       } else {
@@ -1714,6 +1836,11 @@
         
         recordStepError(step, currentStepIndex); // 记录该步骤出错
         stepErrorCount++; // 增加错误计数
+        logEvent('step_wrong', {
+          answerType: 'input',
+          answer: val.trim(),
+          errorCount: stepErrorCount
+        });
         
         // 显示反馈卡片
         showFeedbackCard(feedbackMessage);
@@ -1732,8 +1859,21 @@
         if (remedialData) {
           currentRemedialData = remedialData;
           remedialAnswered = false;
+          logEvent('remedial_start', {
+            remedialQuestion: remedialData.remedialQuestion,
+            sourceStepIndex: remedialData.stepIndex,
+            sourceStepNum: remedialData.stepIndex != null ? remedialData.stepIndex + 1 : null,
+            sourceSkillTag: remedialData.skillTag || null,
+            sourcePriority: remedialData.priority || null
+          });
           currentView = 'remedial';
         } else {
+          logEvent('question_complete', {
+            questionTitle: q ? q.title : null,
+            questionId: currentQuestionId,
+            hasRemedial: false,
+            completedAt: new Date().toISOString()
+          });
           currentView = 'complete';
         }
       }
@@ -1826,6 +1966,11 @@
     window.submitRemedialInput = submitRemedialInput;
     window.closeRemedialFeedbackCard = closeRemedialFeedbackCard;
     window.finishRemedial = finishRemedial;
+
+    // 调试：事件记录相关函数
+    window.logEvent = logEvent;
+    window.getEventLogs = getEventLogs;
+    window.clearEventLogs = clearEventLogs;
 
     // 启动
     render();
