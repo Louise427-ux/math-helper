@@ -142,6 +142,28 @@ function listEvents(options = {}) {
   `).all(limit);
 }
 
+function listOfficialEventsForExport() {
+  return db.prepare(`
+    SELECT
+      id,
+      clientEventId,
+      eventType,
+      createdAt,
+      receivedAt,
+      className,
+      studentName,
+      studentNo,
+      practiceName,
+      questionId,
+      stepIndex,
+      isPreview,
+      payloadJson
+    FROM events
+    WHERE isPreview = 0
+    ORDER BY id ASC
+  `).all();
+}
+
 function countEvents() {
   return db.prepare('SELECT COUNT(*) AS count FROM events').get().count;
 }
@@ -152,5 +174,6 @@ module.exports = {
   insertEvent,
   insertEvents,
   listEvents,
+  listOfficialEventsForExport,
   countEvents
 };
