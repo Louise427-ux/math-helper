@@ -933,6 +933,7 @@
     const STORAGE_KEY = 'math_reading_completed';
     const STUDENT_KEY = 'math_reading_student';
     const EVENT_LOG_KEY = 'math_reading_event_logs';
+    const PENDING_EVENT_LOG_KEY = 'math_reading_pending_event_logs';
     const API_BASE_URL = 'http://localhost:3000';
     const DEFAULT_KNOWLEDGE_EXPLANATION = '这个知识点用于帮助你完成本题中的关键转化。';
 
@@ -1045,11 +1046,75 @@
       localStorage.removeItem(EVENT_LOG_KEY);
     }
 
+    function getPendingEventLogs() {
+      try {
+        const raw = localStorage.getItem(PENDING_EVENT_LOG_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function savePendingEventLogs(pendingLogs) {
+      try {
+        localStorage.setItem(PENDING_EVENT_LOG_KEY, JSON.stringify(Array.isArray(pendingLogs) ? pendingLogs : []));
+        return true;
+      } catch {
+        console.warn('[savePendingEventLogs failed]');
+        return false;
+      }
+    }
+
+    function queuePendingEvent(event) {
+      if (!event || !event.clientEventId || event.isPreview === true) return;
+
+      const pendingLogs = getPendingEventLogs();
+      const exists = pendingLogs.some(item => item && item.clientEventId === event.clientEventId);
+      if (!exists) {
+        pendingLogs.push(event);
+        if (savePendingEventLogs(pendingLogs)) {
+          console.log('[queuePendingEvent]', { clientEventId: event.clientEventId, pendingCount: pendingLogs.length });
+        }
+      }
+    }
+
     function generateClientEventId() {
       if (window.crypto && typeof window.crypto.randomUUID === 'function') {
         return window.crypto.randomUUID();
       }
       return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function flushPendingEvents() {
+      if (isPreviewMode()) return;
+
+      const pendingLogs = getPendingEventLogs();
+      if (pendingLogs.length === 0) return;
+
+      fetch(`${API_BASE_URL}/api/events/batch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ events: pendingLogs })
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(result => {
+          if (result && result.ok) {
+            savePendingEventLogs([]);
+            console.log('[flushPendingEvents]', result);
+          } else {
+            console.warn('[flushPendingEvents failed]', result);
+          }
+        })
+        .catch(error => {
+          console.warn('[flushPendingEvents failed]', error);
+        });
     }
 
     function uploadEvent(event) {
@@ -1068,8 +1133,10 @@
         })
         .then(result => {
           console.log('[uploadEvent]', result);
+          flushPendingEvents();
         })
         .catch(error => {
+          queuePendingEvent(event);
           console.warn('[uploadEvent failed]', error);
         });
     }
@@ -2167,6 +2234,9 @@
 
     // 启动
     render();
+    if (!isPreviewMode()) {
+      flushPendingEvents();
+    }
   </script>
 </body>
 </html>
