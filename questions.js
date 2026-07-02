@@ -250,112 +250,127 @@ const questionsData = [
     "problem": "如图，已知 AB∥DE，∠1 = 20°，∠2 = ∠C，则 ∠C 的度数为________。",
     "steps": [
       {
+        "stepTitle": "确定解题突破口",
         "type": "choice",
-        "question": "已知 AB∥DE，要想把 B 点和 D 点的角放到同一个地方研究，过点 C 最适合作哪条辅助线？",
+        "question": "已知 AB∥DE，要想把 B 点和 D 点的角转移到 C 点附近研究，过点 C 最适合作哪条辅助线？",
         "options": [
-          { "text": "过点 C 作直线 l，使 l∥AB", "feedback": "正确。过点 C 作一条与 AB、DE 平行的直线，是这题的关键突破口。" },
-          { "text": "过点 C 作 BC 的垂线", "feedback": "这题的核心不是连新线段，而是利用【AB∥DE】作平行辅助线。" },
-          { "text": "连接 A、D", "feedback": "这题的核心不是连新线段，而是利用【AB∥DE】作平行辅助线。" }
+          { "text": "过点 C 作直线 l，使 l∥AB∥DE", "feedback": "正确。过点 C 作 l∥AB∥DE，是这道题的关键辅助线。" },
+          { "text": "过点 C 作 BC 的垂线", "feedback": "这题的关键不是连线或作垂线，而是利用 AB∥DE 作一条过 C 的平行辅助线。" },
+          { "text": "连接 B、D", "feedback": "这题的关键不是连线或作垂线，而是利用 AB∥DE 作一条过 C 的平行辅助线。" }
         ],
         "correctIndex": 0,
         "skillTag": "辅助线意识",
         "priority": 5,
         "hints": [
-          "题目里唯一特别明显的条件是 AB∥DE。",
-          "平行线条件通常需要【再作一条平行线】来转移角。",
-          "过 C 作一条与 AB、DE 平行的直线，最方便把角集中到 C 点附近。"
+          "题目中最重要的条件是 AB∥DE。",
+          "平行线条件常常需要通过作平行辅助线，把分散的角集中到同一个点附近。",
+          "过 C 作 l∥AB∥DE 后，就可以把 ∠1 和 ∠2 转移到 C 点附近分析。"
         ],
+        "stepSummary": "过点 C 作 l∥AB∥DE，把 B、D 两处的角转移到 C 点附近。",
         "remedialQuestion": "观察原图，若想利用 AB∥DE 解决这道题，过点 C 最适合补画哪条线？",
-        "remedialOptions": ["过点 C 作直线 l∥AB", "过点 C 作 AB 的垂线", "连接 B、D"],
+        "remedialOptions": ["过点 C 作直线 l∥AB∥DE", "过点 C 作 AB 的垂线", "连接 B、D"],
         "remedialCorrectIndex": 0,
-        "remedialAnswer": "过点 C 作直线 l∥AB",
-        "remedialExplanation": "题目给了 AB∥DE，所以最自然的做法是过 C 作一条与它们平行的直线，把分散的角集中到 C 点附近。"
+        "remedialAnswer": "过点 C 作直线 l∥AB∥DE",
+        "remedialExplanation": "题目给出 AB∥DE，最自然的辅助线是过 C 再作一条与它们平行的直线，这样可以把分散在 B、D 两处的角转移到 C 点附近。",
+        "remedialImage": "images/q4.png"
       },
       {
+        "stepTitle": "把 ∠1 转移到 C 点附近",
         "type": "choice",
-        "question": "过点 C 作直线 l，使 l∥AB∥DE。则由 ∠1 = 20°，可以得到 C 点左侧由 BC 与 l 形成的小角是（ ）",
+        "question": "过点 C 作直线 l，使 l∥AB∥DE。由 ∠1 = 20°，可以得到 C 点左上方由 CB 与 l 形成的小角是（ ）",
         "options": [
-          { "text": "20°", "feedback": "正确。由平行线角关系可知，转移到 C 点左侧的小角等于 20°。" },
-          { "text": "∠C", "feedback": "注意是利用【作出的平行线 l】和 AB 平行，把 B 点处的 ∠1 转移过来。" },
-          { "text": "160°", "feedback": "注意是利用【作出的平行线 l】和 AB 平行，把 B 点处的 ∠1 转移过来。" }
+          { "text": "20°", "feedback": "正确。由 l∥AB 可知，C 点左上方由 CB 与 l 形成的小角等于 ∠1，即 20°。" },
+          { "text": "∠C", "feedback": "注意这里是把 B 点处的 ∠1 通过平行线转移到 C 点附近。" },
+          { "text": "160°", "feedback": "注意这里是把 B 点处的 ∠1 通过平行线转移到 C 点附近。" }
         ],
         "correctIndex": 0,
         "skillTag": "平行线角关系",
         "priority": 5,
         "hints": [
-          "l∥AB，所以 BC 与 AB 形成的角，可以转移到 BC 与 l 形成的对应角。",
-          "已知 ∠1 = 20°。",
-          "所以 C 点左侧那个小角也是 20°。"
+          "l∥AB。",
+          "BC 是截线。",
+          "所以 AB 与 BC 形成的 ∠1，可以转移为 C 点处 CB 与 l 形成的小角。"
         ],
-        "remedialQuestion": "若过点 C 作直线 l∥AB，则由 ∠1 = 20° 可得 C 点左侧由 BC 与 l 形成的小角是（ ）",
+        "stepSummary": "由 l∥AB，可得 C 点左上方由 CB 与 l 形成的小角等于 ∠1，即 20°。",
+        "remedialQuestion": "若过点 C 作直线 l∥AB，则由 ∠1 = 20° 可得 C 点左上方由 CB 与 l 形成的小角是（ ）",
         "remedialOptions": ["20°", "∠2", "160°"],
         "remedialCorrectIndex": 0,
         "remedialAnswer": "20°",
-        "remedialExplanation": "因为 l∥AB，所以 BC 与 AB 形成的角等于 BC 与 l 形成的对应角，因此这个小角等于 20°。"
+        "remedialExplanation": "因为 l∥AB，BC 是截线，所以 B 点处的 ∠1 可以转移到 C 点左上方，对应角等于 20°。",
+        "remedialImage": "images/q4.png"
       },
       {
+        "stepTitle": "判断 ∠2 转移后的关系",
         "type": "choice",
-        "question": "仍然过点 C 作直线 l，使 l∥AB∥DE。则由平行线关系，C 点右侧由 l 与 CD 形成的小角等于（ ）",
+        "question": "过点 C 作直线 l，使 l∥AB∥DE。由平行线关系，C 点左下方由 l 与 CD 形成的小角应表示为（ ）",
         "options": [
-          { "text": "∠2", "feedback": "正确。由 l∥DE，可知 C 点右侧的小角等于 ∠2。" },
-          { "text": "20°", "feedback": "这里要把 D 点处的 ∠2，通过平行线 DE∥l 转移到 C 点附近。" },
-          { "text": "∠C + ∠2", "feedback": "这里要把 D 点处的 ∠2，通过平行线 DE∥l 转移到 C 点附近。" }
+          { "text": "180°－∠2", "feedback": "正确。C 点左下方由 l 与 CD 形成的小角是 180°－∠2。" },
+          { "text": "∠2", "feedback": "这里不能把 C 点左下方的小角直接看成 ∠2。它和 ∠2 是同旁内角，二者互补。" },
+          { "text": "20°＋∠2", "feedback": "这里不能把 C 点左下方的小角直接看成 ∠2。它和 ∠2 是同旁内角，二者互补。" }
         ],
         "correctIndex": 0,
         "skillTag": "平行线角关系迁移",
         "priority": 5,
         "hints": [
-          "l∥DE，所以 CD 与 DE 形成的角，可以转移到 CD 与 l 形成的对应角。",
-          "D 点处这个角就是 ∠2。",
-          "所以 C 点右侧那个小角等于 ∠2。"
+          "∠2 是 D 点处由 DE 与 DC 形成的角。",
+          "l∥DE，CD 是截线。",
+          "拼进 ∠C 的是 C 点左下方的小角，它与 ∠2 是同旁内角关系，和为 180°。"
         ],
-        "remedialQuestion": "若过点 C 作直线 l∥DE，则由平行线关系，C 点右侧由 l 与 CD 形成的小角等于（ ）",
-        "remedialOptions": ["∠2", "∠C", "20°"],
+        "stepSummary": "由 l∥DE 可知，C 点左下方由 l 与 CD 形成的小角与 ∠2 互补，所以它等于 180°－∠2。",
+        "remedialQuestion": "观察原图，过点 C 作 l∥DE 后，C 点左下方由 l 与 CD 形成的小角与 ∠2 的关系是（ ）",
+        "remedialOptions": ["它等于 180°－∠2", "它等于 ∠2", "它等于 20°＋∠2"],
         "remedialCorrectIndex": 0,
-        "remedialAnswer": "∠2",
-        "remedialExplanation": "因为 l∥DE，所以 D 点处由 DE 与 DC 形成的 ∠2，可以转移到 C 点右侧对应的小角。"
+        "remedialAnswer": "180°－∠2",
+        "remedialExplanation": "因为 l∥DE，CD 是截线。C 点左下方的小角与 D 点处的 ∠2 是同旁内角，二者和为 180°，所以这个小角等于 180°－∠2。",
+        "remedialImage": "images/q4.png"
       },
       {
+        "stepTitle": "建立 ∠C 的表达式",
         "type": "choice",
-        "question": "若过点 C 作直线 l∥AB∥DE，则在直线 l 上，C 点一侧的三个角分别是 20°、∠C、∠2。下面哪个等式正确？",
+        "question": "过点 C 作直线 l∥AB∥DE 后，∠C 由 C 点左上方的 20° 和左下方的 180°－∠2 组成。下面哪个等式正确？",
         "options": [
-          { "text": "20° + ∠C + ∠2 = 180°", "feedback": "正确。20°、∠C、∠2 这三个角拼成一个平角，所以和为 180°。" },
-          { "text": "20° + ∠C = ∠2", "feedback": "这里要看 C 点附近三个角拼成的是一个平角，而不是只看其中两个角。" },
-          { "text": "∠C + ∠2 = 180°", "feedback": "这里要看 C 点附近三个角拼成的是一个平角，而不是只看其中两个角。" }
+          { "text": "∠C = 20° + (180°－∠2)", "feedback": "正确。∠C = 20° + (180°－∠2)。" },
+          { "text": "20° + ∠C + ∠2 = 180°", "feedback": "这里不能写成 20° + ∠C + ∠2 = 180°。∠2 转移到 C 点附近时，拼进 ∠C 的是它的补角 180°－∠2。" },
+          { "text": "∠C = 20° + ∠2", "feedback": "这里不能写成 20° + ∠C + ∠2 = 180°。∠2 转移到 C 点附近时，拼进 ∠C 的是它的补角 180°－∠2。" }
         ],
         "correctIndex": 0,
-        "skillTag": "平角关系建立",
+        "skillTag": "辅助线后的角关系转化",
         "priority": 5,
         "hints": [
-          "C 点附近的三个相邻角都在直线 l 的同一侧。",
-          "一条直线上的相邻角组成平角。",
-          "平角的度数是 180°。"
+          "C 点左上方的小角等于 20°。",
+          "C 点左下方的小角等于 180°－∠2。",
+          "∠C 是由这两个小角相加得到的。"
         ],
-        "remedialQuestion": "若过点 C 作直线 l∥AB∥DE，则在直线 l 上，C 点一侧的三个角分别是 20°、∠C、∠2。下面哪个等式正确？",
-        "remedialOptions": ["20° + ∠C + ∠2 = 180°", "20° + ∠C = ∠2", "∠C + ∠2 = 180°"],
+        "stepSummary": "∠C 由两个部分组成：左上方的 20°，以及左下方的 180°－∠2，所以 ∠C = 20° + (180°－∠2)。",
+        "remedialQuestion": "若 C 点左上方小角为 20°，C 点左下方小角为 180°－∠2，则 ∠C 可以表示为（ ）",
+        "remedialOptions": ["20° + (180°－∠2)", "20° + ∠2", "180°－20°－∠2"],
         "remedialCorrectIndex": 0,
-        "remedialAnswer": "20° + ∠C + ∠2 = 180°",
-        "remedialExplanation": "这三个角在直线 l 的同一侧，拼成一个平角，所以和等于 180°。"
+        "remedialAnswer": "20° + (180°－∠2)",
+        "remedialExplanation": "∠C 是由 C 点左上方和左下方两个小角拼成的，所以 ∠C = 20° + (180°－∠2)。",
+        "remedialImage": "images/q4.png"
       },
       {
+        "stepTitle": "代入 ∠2 = ∠C 求角度",
         "type": "input",
-        "question": "设 ∠C = x。由前面步骤可知，在直线 l 上有：20° + x + x = 180°。求 x 的值。",
-        "acceptedAnswers": ["80", "80°", "80度"],
+        "question": "已知 ∠C = 20° + (180°－∠2)，且 ∠2 = ∠C。求 ∠C 的度数。",
+        "acceptedAnswers": ["100", "100°", "100度"],
         "placeholder": "请输入答案",
-        "feedbackCorrect": "正确。∠C = 80°。",
-        "feedbackWrong": "别忘了题目还给了 ∠2 = ∠C，所以式子里应该是 20° + x + x = 180°。",
-        "skillTag": "平角关系与方程求角",
+        "feedbackCorrect": "正确。∠C = 100°。",
+        "feedbackWrong": "注意这里不是 20° + 2x = 180°，而是 x = 20° + 180°－x。",
+        "skillTag": "等量代换与方程求角",
         "priority": 5,
         "hints": [
-          "已知 ∠2 = ∠C，所以右侧小角也可以写成 x。",
-          "在直线 l 上，三个相邻角组成平角。",
-          "所以 20 + x + x = 180，解得 2x = 160，x = 80。"
+          "可以设 ∠C = x。",
+          "因为 ∠2 = ∠C，所以 ∠2 也可以表示为 x。",
+          "代入得到 x = 20° + 180°－x，解得 2x = 200°，所以 x = 100°。"
         ],
-        "remedialQuestion": "若 20° + 2x = 180°，则 x =（ ）",
-        "remedialOptions": ["70°", "80°", "90°"],
+        "stepSummary": "设 ∠C = x，因为 ∠2 = ∠C，所以 ∠2 = x。代入 x = 20° + 180°－x，解得 x = 100°。",
+        "remedialQuestion": "若 x = 20° + (180°－x)，则 x =（ ）",
+        "remedialOptions": ["80°", "100°", "120°"],
         "remedialCorrectIndex": 1,
-        "remedialAnswer": "80°",
-        "remedialExplanation": "由 20 + 2x = 180，得 2x = 160，所以 x = 80°。"
+        "remedialAnswer": "100°",
+        "remedialExplanation": "x = 20° + 180°－x，即 x = 200°－x，所以 2x = 200°，x = 100°。",
+        "remedialImage": "images/q4.png"
       }
     ]
   }

@@ -61,6 +61,56 @@
       margin-bottom: 20px;
     }
 
+    .student-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+      text-align: left;
+    }
+
+    .student-card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .student-fields {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .student-input {
+      width: 100%;
+      padding: 11px 12px;
+      font-size: 16px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+    }
+
+    .student-input:focus { border-color: var(--primary); }
+
+    .student-current {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .student-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .student-actions .btn {
+      padding: 11px 14px;
+      font-size: 15px;
+    }
+
     .all-done-banner {
       background: linear-gradient(135deg, #16a34a, #22c55e);
       color: #fff;
@@ -243,6 +293,72 @@
       font-weight: 600;
       color: var(--success);
       margin-bottom: 4px;
+    }
+
+    .completed-steps-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .completed-steps-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .completed-steps-mobile {
+      display: none;
+    }
+
+    .completed-steps-summary {
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      list-style-position: inside;
+    }
+
+    .completed-step {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+
+    .completed-step:last-child {
+      margin-bottom: 0;
+    }
+
+    .completed-step-num {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--success);
+      margin-bottom: 6px;
+    }
+
+    .completed-step-question,
+    .completed-step-answer {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .completed-step-question {
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .completed-step-answer {
+      color: #166534;
+    }
+
+    .completed-step-label {
+      font-weight: 700;
     }
 
     .knowledge-card {
@@ -588,6 +704,48 @@
 
     /* 手机端：题图默认可见，题干文字可折叠，减少看图和作答之间的跳转 */
     @media (max-width: 767px) {
+      .completed-steps-section {
+        padding: 0;
+        margin-bottom: 10px;
+        overflow: hidden;
+      }
+
+      .completed-steps-desktop {
+        display: none;
+      }
+
+      .completed-steps-mobile {
+        display: block;
+      }
+
+      .completed-steps-summary {
+        padding: 11px 14px;
+        font-size: 14px;
+      }
+
+      .completed-steps-mobile[open] .completed-steps-summary {
+        border-bottom: 1px solid var(--border);
+      }
+
+      .completed-steps-mobile-body {
+        padding: 10px;
+      }
+
+      .completed-step {
+        padding: 9px 10px;
+        margin-bottom: 8px;
+      }
+
+      .completed-step-num {
+        margin-bottom: 4px;
+      }
+
+      .completed-step-question,
+      .completed-step-answer {
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
       .question-toggle {
         margin-bottom: 10px;
         padding: 10px 14px;
@@ -760,6 +918,7 @@
   <script src="questions.js"></script>
   <script>
     const STORAGE_KEY = 'math_reading_completed';
+    const STUDENT_KEY = 'math_reading_student';
     const DEFAULT_KNOWLEDGE_EXPLANATION = '这个知识点用于帮助你完成本题中的关键转化。';
 
     const knowledgeBase = {
@@ -817,6 +976,34 @@
       return getCompletedIds().includes(id);
     }
 
+    function getCurrentStudent() {
+      const raw = localStorage.getItem(STUDENT_KEY);
+      if (!raw) return null;
+
+      try {
+        const data = JSON.parse(raw);
+        if (!data.className || !data.studentName) return null;
+
+        return {
+          className: data.className,
+          studentName: data.studentName
+        };
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function setCurrentStudent(className, studentName) {
+      localStorage.setItem(STUDENT_KEY, JSON.stringify({
+        className,
+        studentName
+      }));
+    }
+
+    function clearCurrentStudent() {
+      localStorage.removeItem(STUDENT_KEY);
+    }
+
     // ---------- 答案标准化 ----------
     function normalizeAnswer(str) {
       if (typeof str !== 'string') return '';
@@ -859,15 +1046,50 @@
     }
 
     function renderHome() {
+      const student = getCurrentStudent();
+      if (!student) {
+        app.innerHTML = `
+          <div class="home-header">
+            <h1>数学读题小助手</h1>
+            <p class="home-desc">请先填写班级和姓名，再开始练习。</p>
+            <div class="student-card">
+              <div class="student-card-title">填写学生信息</div>
+              <div class="student-fields">
+                <input type="text" class="student-input" id="studentClassInput" placeholder="班级，如：七1班" autocomplete="off">
+                <input type="text" class="student-input" id="studentNameInput" placeholder="姓名" autocomplete="off">
+              </div>
+              <div class="student-actions">
+                <button type="button" class="btn btn-primary" onclick="saveStudentInfo()">开始练习</button>
+              </div>
+            </div>
+          </div>
+        `;
+        const classInput = document.getElementById('studentClassInput');
+        const nameInput = document.getElementById('studentNameInput');
+        [classInput, nameInput].forEach(input => {
+          if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') saveStudentInfo(); });
+        });
+        return;
+      }
+
       const completed = getCompletedIds();
       const total = questionsData.length;
       const doneCount = questionsData.filter(q => completed.includes(q.id)).length;
       const allDone = doneCount === total;
+      const studentHtml = `
+        <div class="student-card">
+          <div class="student-current">当前学生：${escapeHtml(student.className)} ${escapeHtml(student.studentName)}</div>
+          <div class="student-actions">
+            <button type="button" class="btn btn-secondary" onclick="switchStudent()">修改信息</button>
+          </div>
+        </div>
+      `;
 
       let html = `
         <div class="home-header">
           <h1>数学读题小助手</h1>
           <p class="home-desc">✍️ 建议备一张草稿纸<br>不用抄题，只写关键关系、计算过程或简单草图。</p>
+          ${studentHtml}
         </div>
       `;
 
@@ -913,6 +1135,39 @@
         <div class="history-section">
           <div class="history-title">🧭 本题思路轨迹</div>
           ${items}
+        </div>
+      `;
+    }
+
+    function renderCompletedStepsHtml() {
+      if (stepHistory.length === 0) return '';
+      const items = stepHistory.map(item => {
+        const conclusion = item.answer && item.answer.trim() ? item.answer.trim() : '已完成';
+        return `
+          <div class="completed-step">
+            <div class="completed-step-num">第 ${item.stepNum} 步</div>
+            <div class="completed-step-question">
+              <span class="completed-step-label">问题：</span>${escapeHtml(item.question || '')}
+            </div>
+            <div class="completed-step-answer">
+              <span class="completed-step-label">结论：</span>${escapeHtml(conclusion)}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="completed-steps-section">
+          <div class="completed-steps-desktop">
+            <div class="completed-steps-title">✅ 已完成步骤</div>
+            ${items}
+          </div>
+          <details class="completed-steps-mobile">
+            <summary class="completed-steps-summary">✅ 已完成步骤 ${stepHistory.length} 条</summary>
+            <div class="completed-steps-mobile-body">
+              ${items}
+            </div>
+          </details>
         </div>
       `;
     }
@@ -1018,6 +1273,7 @@
             </div>
           </aside>
           <section class="work-panel">
+            ${renderCompletedStepsHtml()}
             <div class="step-box">
               <div class="current-step-label">当前步骤 · 第 ${currentStepIndex + 1} / ${totalSteps} 步</div>
               <div class="step-question">${escapeHtml(step.question)}</div>
@@ -1081,6 +1337,24 @@
     }
 
     // ---------- 交互 ----------
+    function saveStudentInfo() {
+      const classInput = document.getElementById('studentClassInput');
+      const nameInput = document.getElementById('studentNameInput');
+      const className = classInput ? classInput.value.trim() : '';
+      const name = nameInput ? nameInput.value.trim() : '';
+      if (!className || !name) {
+        alert('请填写班级和姓名。');
+        return;
+      }
+      setCurrentStudent(className, name);
+      renderHome();
+    }
+
+    function switchStudent() {
+      clearCurrentStudent();
+      renderHome();
+    }
+
     function startPractice(id) {
       currentQuestionId = id;
       currentStepIndex = 0;
@@ -1511,6 +1785,8 @@
     })();
 
     // 暴露给 onclick
+    window.saveStudentInfo = saveStudentInfo;
+    window.switchStudent = switchStudent;
     window.startPractice = startPractice;
     window.toggleQuestionPanel = toggleQuestionPanel;
     window.toggleKnowledgeCard = toggleKnowledgeCard;
