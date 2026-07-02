@@ -1146,6 +1146,99 @@
       URL.revokeObjectURL(url);
     }
 
+    function exportTeacherFriendlyCsv() {
+      const logs = getEventLogs().filter(item => item && item.isPreview === false);
+      if (logs.length === 0) {
+        alert('暂无可导出的学生作答记录');
+        return;
+      }
+
+      const columns = [
+        '时间',
+        '班级',
+        '姓名',
+        '题目ID',
+        '题目名称',
+        '步骤序号',
+        '事件类型',
+        '是否答对',
+        '学生作答',
+        '错误次数',
+        '错因标签',
+        '是否进入补练',
+        '补练题目',
+        '来源步骤',
+        '是否完成整题'
+      ];
+
+      const eventTypeMap = {
+        step_correct: '主线答对',
+        step_wrong: '主线答错',
+        remedial_start: '进入补练',
+        remedial_correct: '补练答对',
+        remedial_wrong: '补练答错',
+        question_complete: '完成整题'
+      };
+
+      const toCsvValue = value => {
+        if (value == null) return '';
+        const str = String(value);
+        return /[",\r\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+      };
+
+      const getQuestionTitle = log => {
+        if (log.questionTitle) return log.questionTitle;
+        const q = questionsData.find(item => item.id === log.questionId);
+        return q ? q.title : '';
+      };
+
+      const rows = logs.map(log => {
+        const answer = log.selectedAnswer != null && log.selectedAnswer !== ''
+          ? log.selectedAnswer
+          : (log.answer != null ? log.answer : '');
+        const correct = log.eventType === 'step_correct' || log.eventType === 'remedial_correct'
+          ? '是'
+          : (log.eventType === 'step_wrong' || log.eventType === 'remedial_wrong' ? '否' : '');
+        const enteredRemedial = log.eventType === 'remedial_start'
+          ? '是'
+          : (log.eventType === 'question_complete' ? (log.hasRemedial ? '是' : '否') : '');
+        const completed = log.eventType === 'question_complete' ? '是' : '';
+        const sourceStep = log.sourceStepNum != null ? log.sourceStepNum : log.stepNum;
+        const skillTag = log.sourceSkillTag || log.skillTag || '';
+
+        return [
+          log.createdAt,
+          log.className,
+          log.studentName,
+          log.questionId,
+          getQuestionTitle(log),
+          log.stepNum,
+          eventTypeMap[log.eventType] || log.eventType,
+          correct,
+          answer,
+          log.errorCount,
+          skillTag,
+          enteredRemedial,
+          log.remedialQuestion,
+          sourceStep,
+          completed
+        ].map(toCsvValue).join(',');
+      });
+
+      const now = new Date();
+      const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      const csv = '\uFEFF' + [columns.join(','), ...rows].join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `数学读题作答记录-${date}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
     // ---------- 答案标准化 ----------
     function normalizeAnswer(str) {
       if (typeof str !== 'string') return '';
@@ -1224,7 +1317,7 @@
           <div class="preview-banner">
             教师预览模式：当前测试不会作为学生数据记录。
             <div class="student-actions">
-              <button type="button" class="btn btn-secondary" onclick="exportEventLogsCsv()">导出作答记录 CSV</button>
+              <button type="button" class="btn btn-secondary" onclick="exportTeacherFriendlyCsv()">导出作答记录 CSV</button>
             </div>
           </div>
         `
@@ -2038,6 +2131,7 @@
     window.getEventLogs = getEventLogs;
     window.clearEventLogs = clearEventLogs;
     window.exportEventLogsCsv = exportEventLogsCsv;
+    window.exportTeacherFriendlyCsv = exportTeacherFriendlyCsv;
 
     // 启动
     render();
