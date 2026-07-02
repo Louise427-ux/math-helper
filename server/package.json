@@ -1,0 +1,17 @@
+{
+  "name": "math-helper-server",
+  "version": "1.0.0",
+  "description": "Backend MVP for math reading helper event logs",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "latest",
+    "cors": "latest",
+    "dotenv": "latest",
+    "express": "latest"
+  }
+}
